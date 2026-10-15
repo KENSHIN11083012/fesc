@@ -1,0 +1,51 @@
+# Cajas que integra Caja Link. Agregar una caja nueva = agregar una entrada aquí
+# (con un "type" soportado) y sus variables en .env; no hay que tocar el código.
+# Los valores ${VARIABLE} y ${VARIABLE:-por_defecto} se leen del entorno (.env):
+# aquí no se escriben direcciones ni secretos.
+
+service:
+  port: ${PORT:-8083}
+  # Tiempo máximo por caja en la consulta en línea (el contrato exige responder en < 5 s).
+  onlineTimeoutMs: ${ONLINE_TIMEOUT_MS:-3000}
+  onlineRetries: 1
+  batch:
+    concurrency: ${BATCH_CONCURRENCY:-32}
+    timeoutMs: 8000
+    retries: 2
+
+# Token de administración: solo él puede leer la auditoría.
+admin:
+  token: ${ADMIN_TOKEN}
+
+cajas:
+  - name: NORTE
+    type: rest-norte          # REST JSON con X-Api-Key
+    enabled: true
+    consumerToken: ${NORTE_TOKEN}
+    connection:
+      url: ${CAJA_NORTE_URL}
+      apiKey: ${CAJA_NORTE_API_KEY}
+
+  - name: ORIENTE
+    type: soap-oriente        # SOAP 1.1, documentos de 12 dígitos
+    enabled: true
+    consumerToken: ${ORIENTE_TOKEN}
+    connection:
+      url: ${CAJA_ORIENTE_URL}
+      user: ${CAJA_ORIENTE_USER}
+      password: ${CAJA_ORIENTE_PASSWORD}
+
+  - name: CENTRO
+    type: file-centro         # archivo plano diario (información del día anterior)
+    enabled: true
+    consumerToken: ${CENTRO_TOKEN}
+    connection:
+      directory: ${CAJA_CENTRO_DIR}
+
+  - name: SUR
+    type: rest-sur            # REST JSON v2 con Bearer; se activa con CAJA_SUR_ENABLED=true
+    enabled: ${CAJA_SUR_ENABLED:-false}
+    consumerToken: ${SUR_TOKEN}
+    connection:
+      url: ${CAJA_SUR_URL}
+      token: ${CAJA_SUR_TOKEN}
