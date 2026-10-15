@@ -1,0 +1,29 @@
+{
+  "name": "caja-link",
+  "version": "1.0.0",
+  "description": "Servicio de interoperabilidad entre cajas de compensación (FESC Legacy Challenge 2026)",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "dev": "tsx watch src/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\""
+  },
+  "dependencies": {
+    "express": "5.1.0",
+    "fast-xml-parser": "4.5.1",
+    "js-yaml": "4.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.0",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "22.10.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}
