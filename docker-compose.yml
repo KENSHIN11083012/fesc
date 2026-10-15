@@ -72,5 +72,20 @@ services:
       caja-link:
         condition: service_healthy
 
+  # Prueba de carga del lote: docker compose --profile load run --rm k6
+  k6:
+    image: grafana/k6:0.54.0
+    profiles: ["load"]
+    env_file: .env
+    environment:
+      SERVICE_URL: http://caja-link:8083
+    volumes:
+      - ./loadtest:/scripts:ro
+      - ./data:/data:ro
+    command: ["run", "--summary-trend-stats", "avg,med,p(95),max", "/scripts/batch-10000.js"]
+    depends_on:
+      caja-link:
+        condition: service_healthy
+
 volumes:
   caja-link-data:
