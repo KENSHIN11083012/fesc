@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="autenticación" time="0.044921" disabled="0" errors="0" tests="3" failures="0" skipped="0" timestamp="2026-10-15T02:12:23.409Z" hostname="0c8b361f06df">
+		<testcase name="test_consulta_sin_token_responde_401" time="0.035227" classname="autenticación" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_token_invalido_responde_401" time="0.004376" classname="autenticación" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_auditoria_con_token_de_caja_responde_403" time="0.004462" classname="autenticación" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="finalidad" time="0.003616" disabled="0" errors="0" tests="2" failures="0" skipped="0" timestamp="2026-10-15T02:12:23.454Z" hostname="0c8b361f06df">
+		<testcase name="test_consulta_sin_finalidad_responde_400" time="0.001717" classname="finalidad" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_consulta_con_finalidad_invalida_responde_400" time="0.001639" classname="finalidad" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="resultados y contrato" time="0.411779" disabled="0" errors="0" tests="7" failures="0" skipped="0" timestamp="2026-10-15T02:12:23.460Z" hostname="0c8b361f06df">
+		<testcase name="test_doble_afiliacion_norte_y_oriente" time="0.005624" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_excluye_caja_consultante_en_la_respuesta" time="0.046227" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_no_afiliado_cuando_todas_responden" time="0.003156" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_normalizacion_da_el_mismo_resultado" time="0.176688" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_coincidencia_centro_con_source_file" time="0.043932" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_respuesta_sin_datos_personales" time="0.047986" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_v2_agrega_affiliate_type_y_v1_no_cambia" time="0.087441" classname="resultados y contrato" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="tolerancia a fallas" time="3.316417" disabled="0" errors="0" tests="2" failures="0" skipped="0" timestamp="2026-10-15T02:12:23.869Z" hostname="0c8b361f06df">
+		<testcase name="test_caja_norte_caida_responde_indeterminado" time="0.309790" classname="tolerancia a fallas" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_caja_norte_lenta_responde_en_menos_de_5_segundos" time="3.005251" classname="tolerancia a fallas" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="auditoría" time="0.005187" disabled="0" errors="0" tests="1" failures="0" skipped="0" timestamp="2026-10-15T02:12:27.186Z" hostname="0c8b361f06df">
+		<testcase name="test_auditoria_registra_campos_y_documento_enmascarado" time="0.004964" classname="auditoría" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="lote" time="0.258794" disabled="0" errors="0" tests="2" failures="0" skipped="0" timestamp="2026-10-15T02:12:27.191Z" hostname="0c8b361f06df">
+		<testcase name="test_lote_idempotente_y_con_resultados" time="0.256524" classname="lote" file="/app/tests/integration/api.test.ts"/>
+		<testcase name="test_lote_sin_idempotency_key_responde_400" time="0.001948" classname="lote" file="/app/tests/integration/api.test.ts"/>
+	</testsuite>
+	<testsuite name="caso de uso CheckAffiliation" time="0.002357" disabled="0" errors="0" tests="3" failures="0" skipped="0" timestamp="2026-10-15T02:12:27.604Z" hostname="0c8b361f06df">
+		<testcase name="test_excluye_caja_consultante" time="0.000903" classname="caso de uso CheckAffiliation" file="/app/tests/unit/application.test.ts"/>
+		<testcase name="test_auditoria_registra_finalidad_y_documento_enmascarado" time="0.000199" classname="caso de uso CheckAffiliation" file="/app/tests/unit/application.test.ts"/>
+		<testcase name="test_caja_que_falla_queda_en_unavailable" time="0.000549" classname="caso de uso CheckAffiliation" file="/app/tests/unit/application.test.ts"/>
+	</testsuite>
+	<testsuite name="decorator ResilientGateway" time="0.401876" disabled="0" errors="0" tests="2" failures="0" skipped="0" timestamp="2026-10-15T02:12:27.604Z" hostname="0c8b361f06df">
+		<testcase name="test_caja_lenta_se_corta_por_tiempo" time="0.301299" classname="decorator ResilientGateway" file="/app/tests/unit/application.test.ts"/>
+		<testcase name="test_reintenta_falla_momentanea" time="0.100168" classname="decorator ResilientGateway" file="/app/tests/unit/application.test.ts"/>
+	</testsuite>
+	<testsuite name="dominio" time="0.002294" disabled="0" errors="0" tests="6" failures="0" skipped="0" timestamp="2026-10-15T02:12:29.752Z" hostname="0c8b361f06df">
+		<testcase name="test_normaliza_documento_con_puntos_espacios_y_ceros" time="0.000646" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_rechaza_documento_con_letras_o_vacio" time="0.000273" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_vigencia_por_fechas" time="0.000177" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_convierte_formatos_de_fecha_de_las_cajas" time="0.000180" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_finalidad_solo_acepta_valores_legitimos" time="0.000132" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_documento_enmascarado_muestra_maximo_4_digitos" time="0.000131" classname="dominio" file="/app/tests/unit/domain.test.ts"/>
+	</testsuite>
+	<testsuite name="veredicto" time="0.001145" disabled="0" errors="0" tests="3" failures="0" skipped="0" timestamp="2026-10-15T02:12:29.754Z" hostname="0c8b361f06df">
+		<testcase name="test_caja_caida_sin_coincidencias_da_indeterminado" time="0.000599" classname="veredicto" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_coincidencia_gana_aunque_otra_caja_este_caida" time="0.000164" classname="veredicto" file="/app/tests/unit/domain.test.ts"/>
+		<testcase name="test_todas_responden_sin_vigentes_da_no_afiliado" time="0.000133" classname="veredicto" file="/app/tests/unit/domain.test.ts"/>
+	</testsuite>
+	<testsuite name="adaptadores" time="0.003045" disabled="0" errors="0" tests="3" failures="0" skipped="0" timestamp="2026-10-15T02:12:29.947Z" hostname="0c8b361f06df">
+		<testcase name="test_documento_oriente_doce_digitos_con_puntos" time="0.000602" classname="adaptadores" file="/app/tests/unit/infrastructure.test.ts"/>
+		<testcase name="test_archivo_centro_descarta_nombre_y_salario" time="0.001091" classname="adaptadores" file="/app/tests/unit/infrastructure.test.ts"/>
+		<testcase name="test_csv_lote_extrae_columna_document" time="0.000289" classname="adaptadores" file="/app/tests/unit/infrastructure.test.ts"/>
+	</testsuite>
+	<testsuite name="configuración" time="0.005463" disabled="0" errors="0" tests="3" failures="0" skipped="0" timestamp="2026-10-15T02:12:29.946Z" hostname="0c8b361f06df">
+		<testcase name="test_configuracion_interpola_variables_de_entorno" time="0.001432" classname="configuración" file="/app/tests/unit/infrastructure.test.ts"/>
+		<testcase name="test_cuarta_caja_se_activa_solo_por_configuracion" time="0.000274" classname="configuración" file="/app/tests/unit/infrastructure.test.ts"/>
+		<testcase name="test_config_cajas_declara_las_cuatro_cajas" time="0.003249" classname="configuración" file="/app/tests/unit/infrastructure.test.ts"/>
+	</testsuite>
+	<testsuite name="secretos" time="0.002825" disabled="0" errors="0" tests="1" failures="0" skipped="0" timestamp="2026-10-15T02:12:29.950Z" hostname="0c8b361f06df">
+		<testcase name="test_secretos_no_escritos_en_codigo_ni_configuracion" time="0.002592" classname="secretos" file="/app/tests/unit/infrastructure.test.ts"/>
+	</testsuite>
+	<!-- tests 38 -->
+	<!-- suites 13 -->
+	<!-- pass 38 -->
+	<!-- fail 0 -->
+	<!-- cancelled 0 -->
+	<!-- skipped 0 -->
+	<!-- todo 0 -->
+	<!-- duration_ms 6714.015588 -->
+</testsuites>
