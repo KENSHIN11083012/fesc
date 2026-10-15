@@ -16,6 +16,7 @@ RUN npm run build
 FROM deps AS test
 COPY tsconfig.json ./
 COPY src ./src
+COPY config ./config
 COPY tests ./tests
 CMD ["sh", "-c", "mkdir -p test-results && node --import tsx --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results/junit.xml \"tests/**/*.test.ts\""]
 
