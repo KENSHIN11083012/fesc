@@ -33,13 +33,44 @@ services:
     ports:
       - "${CAJA_SUR_PORT:-9004}:9004"
 
-  # Agreguen aquí su servicio de interoperabilidad (puerto de contrato 8083).
-  # Caja Centro no tiene servicio: monten ./caja-centro (archivo plano diario).
-  # caja-link:
-  #   build: ./src
-  #   env_file: .env
-  #   ports:
-  #     - "8083:8083"
-  #   volumes:
-  #     - ./caja-centro:/data/caja-centro:ro
-  #     - ./config:/app/config:ro
+  # Servicio de interoperabilidad (puerto de contrato 8083). Habla con las cajas
+  # solo por sus interfaces: REST, SOAP y el archivo publicado de Caja Centro.
+  caja-link:
+    build:
+      context: .
+      target: runtime
+    env_file: .env
+    environment:
+      PORT: "8083"
+      CONFIG_PATH: /app/config/cajas.yaml
+      DATA_DIR: /app/data
+      TIME_ZONE: America/Bogota
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./caja-centro:/data/caja-centro:ro
+      - ./config:/app/config:ro
+      - caja-link-data:/app/data
+    depends_on:
+      - caja-norte
+      - caja-oriente
+    restart: unless-stopped
+
+  # Pruebas del equipo: docker compose --profile test run --rm tests
+  # Prueban el servicio en funcionamiento y dejan el reporte JUnit en ./test-results/.
+  tests:
+    build:
+      context: .
+      target: test
+    profiles: ["test"]
+    env_file: .env
+    environment:
+      SERVICE_URL: http://caja-link:8083
+    volumes:
+      - ./test-results:/app/test-results
+    depends_on:
+      caja-link:
+        condition: service_healthy
+
+volumes:
+  caja-link-data:
