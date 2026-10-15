@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: Caja Link — interoperabilidad entre cajas de compensación
+  version: 2.0.0
+  description: |
+    Servicio que responde si una persona tiene afiliación vigente en **otra** caja de compensación,
+    sin compartir bases de datos y sin exponer datos personales (Ley 1581 de 2012).
+
+    - Cada caja consumidora se autentica con `Authorization: Bearer <token>`; la caja dueña del token
+      queda excluida de la búsqueda.
+    - Toda consulta declara una finalidad (`purpose`).
+    - Si una caja no responde y no hay coincidencias en las demás, el resultado es `INDETERMINADO`
+      (nunca `NO_AFILIADO`).
+    - La versión 1 está congelada; la versión 2 agrega `affiliateType`.
+servers:
+  - url: http://localhost:8083
+    description: Entorno local (docker compose)
+security:
+  - bearerAuth: []
+tags:
+  - name: Consulta en línea
+  - name: Lote
+  - name: Auditoría
+
+paths:
+  /api/v1/affiliations/{document}:
+    get:
+      tags: [Consulta en línea]
+      operationId: consultarAfiliacionV1
+      summary: ¿El documento tiene afiliación vigente en otra caja? (v1, congelada)
+      parameters:
+        - $ref: "#/components/parameters/Document"
+        - $ref: "#/components/parameters/Purpose"
+      responses:
+        "200":
+          description: Veredicto de afiliación
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AffiliationResponseV1" }
+              examples:
+                afiliado:
+                  value:
+                    requestId: 01M4YN2W34TE5VK7RCGS4JNFYJ
+                    result: AFILIADO_OTRA_CAJA
+                    matches:
+                      - { caja: NORTE, validFrom: "2019-02-01", validTo: null, source: ONLINE, asOf: "2026-10-14" }
+                      - { caja: CENTRO, validFrom: "2014-01-22", validTo: null, source: FILE, asOf: "2026-10-03" }
+                    unavailable: []
+                indeterminado:
+                  value:
+                    requestId: 01M4YN2W918CXK0K53KPHRTC3N
+                    result: INDETERMINADO
+                    matches: []
+                    unavailable: [NORTE]
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v2/affiliations/{document}:
+    get:
+      tags: [Consulta en línea]
+      operationId: consultarAfiliacionV2
+      summary: Igual que v1 y agrega el tipo de afiliado en cada coincidencia
+      parameters:
+        - $ref: "#/components/parameters/Document"
+        - $ref: "#/components/parameters/Purpose"
+      responses:
+        "200":
+          description: Veredicto de afiliación con tipo de afiliado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AffiliationResponseV2" }
+              example:
+                requestId: 01M4YMSWG63YTK78JC2ECYBFNK
+                result: AFILIADO_OTRA_CAJA
+                matches:
+                  - { caja: SUR, validFrom: "2014-03-31", validTo: null, source: ONLINE, asOf: "2026-10-14", affiliateType: DEPENDIENTE }
+                unavailable: []
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/v1/batch-checks:
+    post:
+      tags: [Lote]
+      operationId: enviarLote
+      summary: Envía un CSV de documentos para detectar dobles afiliaciones (asíncrono)
+      description: |
+        Repetir la petición con la misma `Idempotency-Key` (y el mismo token) devuelve el mismo `jobId`
+        sin procesar el lote dos veces.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, maxLength: 200 }
+          example: lote-2026-10-14-001
+        - name: purpose
+          in: query
+          required: false
+          description: Finalidad del cruce; por defecto VALIDACION_AFILIACION
+          schema: { $ref: "#/components/schemas/Purpose" }
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: { type: string }
+            example: |
+              document
+              1098765432
+              1.002.329.359
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: CSV con columna document }
+      responses:
+        "202":
+          description: Lote aceptado
+          headers:
+            Location: { schema: { type: string }, description: URL para consultar el estado }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [jobId]
+                properties:
+                  jobId: { type: string, example: 01M4YN3A0QF0X1Z5R6S7T8V9W0 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "415":
+          description: Formato del cuerpo no soportado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/v1/batch-checks/{jobId}:
+    get:
+      tags: [Lote]
+      operationId: consultarLote
+      summary: Estado y resultados de un lote
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Estado del lote; `results` se llena cuando el estado es DONE
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BatchStatus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: No existe un lote con ese jobId para la caja que consulta
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/v1/audit:
+    get:
+      tags: [Auditoría]
+      operationId: consultarAuditoria
+      summary: Últimas entradas de auditoría (solo ADMIN_TOKEN)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        "200":
+          description: Entradas más recientes primero
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, entries]
+                properties:
+                  count: { type: integer }
+                  entries:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditEntry" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: El token pertenece a una caja, no a administración
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token de la caja consumidora (NORTE_TOKEN, ORIENTE_TOKEN, CENTRO_TOKEN, SUR_TOKEN) o ADMIN_TOKEN.
+
+  parameters:
+    Document:
+      name: document
+      in: path
+      required: true
+      description: Número de documento; se aceptan puntos, espacios y ceros a la izquierda (se normaliza).
+      schema: { type: string }
+      example: 1.098.765.432
+    Purpose:
+      name: purpose
+      in: query
+      required: true
+      description: Finalidad de la consulta (obligatoria). Sin ella o con un valor inválido se responde 400.
+      schema: { $ref: "#/components/schemas/Purpose" }
+
+  responses:
+    BadRequest:
+      description: Finalidad ausente o inválida, documento inválido o petición mal formada
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: FINALIDAD_INVALIDA, message: "El parámetro purpose es obligatorio y debe ser uno de: TARIFA_SUBSIDIADA, SUBSIDIO_MONETARIO, VALIDACION_AFILIACION" }
+    Unauthorized:
+      description: Falta el token o no es válido
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: NO_AUTENTICADO, message: Se requiere un token Bearer válido de una caja consumidora }
+
+  schemas:
+    Purpose:
+      type: string
+      enum: [TARIFA_SUBSIDIADA, SUBSIDIO_MONETARIO, VALIDACION_AFILIACION]
+    Result:
+      type: string
+      enum: [AFILIADO_OTRA_CAJA, NO_AFILIADO, INDETERMINADO]
+    MatchV1:
+      type: object
+      additionalProperties: false
+      required: [caja, validFrom, validTo, source, asOf]
+      properties:
+        caja: { type: string, example: NORTE }
+        validFrom: { type: string, format: date }
+        validTo: { type: string, format: date, nullable: true }
+        source: { type: string, enum: [ONLINE, FILE] }
+        asOf: { type: string, format: date, description: Fecha a la que corresponde la información }
+    MatchV2:
+      allOf:
+        - $ref: "#/components/schemas/MatchV1"
+        - type: object
+          required: [affiliateType]
+          properties:
+            affiliateType: { type: string, enum: [DEPENDIENTE, INDEPENDIENTE, PENSIONADO] }
+    AffiliationResponseV1:
+      type: object
+      additionalProperties: false
+      required: [requestId, result, matches, unavailable]
+      properties:
+        requestId: { type: string, description: Identificador ULID de la consulta }
+        result: { $ref: "#/components/schemas/Result" }
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/MatchV1" }
+        unavailable:
+          type: array
+          description: Cajas que no respondieron a tiempo
+          items: { type: string }
+    AffiliationResponseV2:
+      type: object
+      required: [requestId, result, matches, unavailable]
+      properties:
+        requestId: { type: string }
+        result: { $ref: "#/components/schemas/Result" }
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/MatchV2" }
+        unavailable:
+          type: array
+          items: { type: string }
+    BatchResult:
+      type: object
+      required: [document, normalizedDocument, result, matches, unavailable]
+      properties:
+        document: { type: string, description: Documento tal como llegó en el CSV }
+        normalizedDocument: { type: string, nullable: true }
+        result: { $ref: "#/components/schemas/Result" }
+        matches:
+          type: array
+          items: { $ref: "#/components/schemas/MatchV1" }
+        unavailable:
+          type: array
+          items: { type: string }
+        error: { type: string, example: DOCUMENTO_INVALIDO }
+    BatchStatus:
+      type: object
+      required: [jobId, status, results]
+      properties:
+        jobId: { type: string }
+        status: { type: string, enum: [PENDING, RUNNING, DONE] }
+        total: { type: integer }
+        processed: { type: integer }
+        createdAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time, nullable: true }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/BatchResult" }
+    AuditEntry:
+      type: object
+      required: [timestamp, requestingCaja, purpose, result, documentMasked]
+      properties:
+        timestamp: { type: string, format: date-time }
+        requestingCaja: { type: string, example: ORIENTE }
+        purpose: { $ref: "#/components/schemas/Purpose" }
+        result: { $ref: "#/components/schemas/Result" }
+        documentMasked: { type: string, example: "******5432" }
+        requestId: { type: string }
+        channel: { type: string, enum: [ONLINE, BATCH] }
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
